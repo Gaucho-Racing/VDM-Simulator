@@ -91,6 +91,11 @@ float motorOut(float throttle, iCANflex& car, const vector<int>& switches) {
     return 0;
 }
 
+float regenOut(iCANflex& car) {
+    // getWheelSpeed(), [steering angle node], [brake pedal travel node]
+    return 0;
+}
+
 State drive(iCANflex& Car, const vector<int>& switches, bool& BSE_APPS_violation) {
     if(!switches[0]) return OFF;
     if(!switches[1]) return ON;
@@ -111,7 +116,12 @@ State drive(iCANflex& Car, const vector<int>& switches, bool& BSE_APPS_violation
 
 
     Car.DTI.setDriveEnable(1);
-    Car.DTI.setRCurrent(motorOut(throttle, Car, switches));
+    
+    if (throttle > 0.05 || brake < 0.05) { // 0.05 pedal travel epsilon
+        Car.DTI.setRCurrent(motorOut(throttle, Car, switches));
+    } else {
+        Car.DTI.setRBrakeCurrent(regenOut(Car));
+    }
     
     return DRIVE;
 }

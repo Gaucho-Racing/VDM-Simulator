@@ -67,6 +67,8 @@ class iCANflex{
 
     void ping(byte);
 
+    void canSimulation();
+
 };
 
 

@@ -1,6 +1,6 @@
 #include "FlexCAN_T4.h"
 #include "Nodes.h"
-#include "icanflex.h"
+#include "fake_can.h"
 
 unsigned long lastRecieveTime=millis();
 
@@ -35,8 +35,41 @@ bool iCANflex::begin() {   //Coordinate the magic CAN pixies to dance together
     msg.flags.extended = 1;
     can_data.begin();
     can_data.setBaudRate(1000000);
+
     return true;
 }
+
+void iCANflex::canSimulation() {
+
+    // fix later to read from csv
+    int timeInput;
+    int APPS1Input;
+    int APPS2Input;
+    int brakesInput;
+    int erpmInput; // SIGNED
+
+    // APPS1:  ID=0xC8,   bytes 0-1
+    // APPS2:  ID=0xC8,   bytes 2-3
+    // brakes: ID=0xC8,   bytes 4-7 (front brakes 4-5, back brakes 6-7)
+    // erpm:   ID=0x2016, bytes 0-3
+    while (true) { // while csv has values
+        byte buf[8];
+        buf[0] = (erpmInput >> 24) & 0xFF;
+        buf[1] = (erpmInput >> 16) & 0xFF;
+        buf[2] = (erpmInput >> 8) & 0xFF;
+        buf[3] = (erpmInput) & 0xFF;
+        DTI.receive(0x2016, buf);
+
+        buf[0] = (APPS1Input >> 24) & 0xFF;
+        buf[1] = (APPS2Input >> 16) & 0xFF;
+        buf[2] = (brakesInput) & 0xFF00;
+        buf[3] = (brakesInput) & 0x00FF;
+        PEDALS.receive(0xC8, buf);
+
+
+    }
+}
+
 bool iCANflex::readData(){    //Read data from the inverter or the BMS
     // lastRecieveTime = millis();
     // if(!can_primary.read(msg)){ // fix this line I beg you

@@ -8,7 +8,8 @@
 #include <imxrt.h>
 #include <unordered_map>
 #include <unordered_set>
-#include "iCANflex.h"
+//#include "iCANflex.h"
+#include "fake_can.h"
 #include "SD.h"
 #include "systems_check.h" 
 

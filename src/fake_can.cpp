@@ -42,31 +42,42 @@ bool iCANflex::begin() {   //Coordinate the magic CAN pixies to dance together
 void iCANflex::canSimulation() {
 
     // fix later to read from csv
-    int timeInput;
-    int APPS1Input;
-    int APPS2Input;
-    int brakesInput;
-    int erpmInput; // SIGNED
 
     // APPS1:  ID=0xC8,   bytes 0-1
     // APPS2:  ID=0xC8,   bytes 2-3
     // brakes: ID=0xC8,   bytes 4-7 (front brakes 4-5, back brakes 6-7)
     // erpm:   ID=0x2016, bytes 0-3
-    while (true) { // while csv has values
-        byte buf[8];
-        buf[0] = (erpmInput >> 24) & 0xFF;
-        buf[1] = (erpmInput >> 16) & 0xFF;
-        buf[2] = (erpmInput >> 8) & 0xFF;
-        buf[3] = (erpmInput) & 0xFF;
-        DTI.receive(0x2016, buf);
+    if (true) {// while csv has values
+        int timeInput;
+        // read current time input, but do not move on
+        if (millis() > timeInput * 1000) {
+            byte buf[8];
 
-        buf[0] = (APPS1Input >> 24) & 0xFF;
-        buf[1] = (APPS2Input >> 16) & 0xFF;
-        buf[2] = (brakesInput) & 0xFF00;
-        buf[3] = (brakesInput) & 0x00FF;
-        PEDALS.receive(0xC8, buf);
+            // read csv values on current row into
+            int APPS1Input;
+            int APPS2Input;
+            int brakesInput;
+            int erpmInput;
 
+            buf[0] = (erpmInput      ) & 0xFF;
+            buf[1] = (erpmInput >> 8 ) & 0xFF;
+            buf[2] = (erpmInput >> 16) & 0xFF;
+            buf[3] = (erpmInput >> 24) & 0xFF;
+            DTI.receive(0x2016, buf);
 
+            buf[0] = (APPS1Input      ) & 0xFF;
+            buf[1] = (APPS1Input  >> 8) & 0xFF;
+            buf[2] = (APPS2Input      ) & 0xFF;
+            buf[3] = (APPS2Input  >> 8) & 0xFF;        
+            buf[4] = (brakesInput     ) & 0xFF;
+            buf[5] = (brakesInput >> 8) & 0xFF;
+            buf[6] = (brakesInput     ) & 0xFF;
+            buf[7] = (brakesInput >> 8) & 0xFF;
+            PEDALS.receive(0xC8, buf);
+
+            // print state machine info: state, target erpm
+            // move to next row
+        }
     }
 }
 

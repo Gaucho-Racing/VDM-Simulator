@@ -1,6 +1,15 @@
+#include <Arduino.h>
 #include "FlexCAN_T4.h"
 #include "Nodes.h"
 #include "fake_can.h"
+#include "SD.h"
+#include "sstream"
+#include <string>
+#include <cstdlib>
+
+using namespace std;
+
+#define numNodes 5
 
 unsigned long lastRecieveTime=millis();
 
@@ -39,6 +48,17 @@ bool iCANflex::begin() {   //Coordinate the magic CAN pixies to dance together
     return true;
 }
 
+void parseCsvLine(int arr[], string line) {
+    for (int i = 0; i < numNodes; i++) {
+        if (i < numNodes - 1) {
+            arr[i] = stoi(line.substr(0, line.find(',')));
+        } else {
+            arr[i] = stoi(line);
+        }
+        arr[i] = stoi(line.substr(line.find(',') + 1, line.length()));
+    }
+}
+
 void iCANflex::canSimulation() {
 
     // fix later to read from csv
@@ -47,33 +67,97 @@ void iCANflex::canSimulation() {
     // APPS2:  ID=0xC8,   bytes 2-3
     // brakes: ID=0xC8,   bytes 4-7 (front brakes 4-5, back brakes 6-7)
     // erpm:   ID=0x2016, bytes 0-3
-    if (true) {// while csv has values
-        int timeInput;
-        // read current time input, but do not move on
+    const stringstream iss;
+
+    Serial.println("Initializing SD Card...");
+    if(!SD.begin(BUILTIN_SDCARD)){
+        Serial.println("CRITICAL FAULT: PLEASE INSERT SD CARD CONTAINING ECU FLASH TUNE");
+    }
+    else{
+        Serial.println("SD INITIALIZATION SUCCESSFUL");
+        File ecu_tune;
+        ecu_tune = SD.open("vdmsim.txt");
+        if(ecu_tune){
+            Serial.print("Reading ECU FLASH....");
+            String tune;
+            while(ecu_tune.available()){
+                Serial.print(".");
+                tune += (char)ecu_tune.read();
+            }
+            ecu_tune.close();
+            Serial.println("");
+
+            iss = new stringstream(tune.c_str()); // const so put into FLASH MEMORY
+            // read in torque profiles, regen profiles, and traction profiles
+            Serial.println("ECU FLASH COMPLETE. GR24 TUNE DOWNLOADED.");
+
+        }
+        else {
+            Serial.println("VDM SIMULATION FAILED");
+        }
+    }
+    string randomFlags;
+    string randomLower;
+    string randomHigher;
+    string wasteVals;
+
+    int rFlags[numNodes];
+    int rLower[numNodes];
+    int rHigher[numNodes];
+    
+    iss >> wasteVals;
+    getline(iss, randomFlags);
+    iss >> wasteVals;
+    getline(iss, randomLower);
+    iss >> wasteVals;
+    getline(iss, randomHigher);
+
+    parseCsvLine(rFlags, randomFlags);
+    parseCsvLine(rLower, randomLower);
+    parseCsvLine(rHigher, randomHigher);
+
+    
+
+
+    if (iss) {// FIX: END AT END OF CSV
+        
+        //FIX: READ IN TIME
+        string timeRaw;
+        iss >> timeRaw;
+        int timeInput = stoi(timeRaw.substr(0, timeRaw.find(',')));
         if (millis() > timeInput * 1000) {
             byte buf[8];
 
             // read csv values on current row into
-            int APPS1Input;
-            int APPS2Input;
-            int brakesInput;
-            int erpmInput;
+            string currLine;
+            int nodeVals[numNodes];
+             
+            getline(iss, currLine);
+            parseCsvLine(nodeVals, currLine);
+            
+            for (int i = 0; i < numNodes; i++) {
+                if (rFlags[i] == 1) {
+                    nodeVals[i] = (rand() % (rHigher[i] + 1 - rLower[i])) + rLower[i];
+                }
+            }
 
-            buf[0] = (erpmInput      ) & 0xFF;
-            buf[1] = (erpmInput >> 8 ) & 0xFF;
-            buf[2] = (erpmInput >> 16) & 0xFF;
-            buf[3] = (erpmInput >> 24) & 0xFF;
-            DTI.receive(0x2016, buf);
-
-            buf[0] = (APPS1Input      ) & 0xFF;
-            buf[1] = (APPS1Input  >> 8) & 0xFF;
-            buf[2] = (APPS2Input      ) & 0xFF;
-            buf[3] = (APPS2Input  >> 8) & 0xFF;        
-            buf[4] = (brakesInput     ) & 0xFF;
-            buf[5] = (brakesInput >> 8) & 0xFF;
-            buf[6] = (brakesInput     ) & 0xFF;
-            buf[7] = (brakesInput >> 8) & 0xFF;
+            // PEDALS: (byte 0-1: APPS1, byte 2-3: APPS2, byte 4-5: Front Brakes, byte 6-7: Rear Brakes)
+            buf[0] = (nodeVals[0]      ) & 0xFF;
+            buf[1] = (nodeVals[0]  >> 8) & 0xFF;
+            buf[2] = (nodeVals[1]      ) & 0xFF;
+            buf[3] = (nodeVals[1]  >> 8) & 0xFF;        
+            buf[4] = (nodeVals[2]     ) & 0xFF;
+            buf[5] = (nodeVals[2] >> 8) & 0xFF;
+            buf[6] = (nodeVals[3]     ) & 0xFF;
+            buf[7] = (nodeVals[3] >> 8) & 0xFF;
             PEDALS.receive(0xC8, buf);
+
+            // DTI: (byte 0-3: ERPM, 4-7: junk)
+            buf[0] = (nodeVals[4]      ) & 0xFF;
+            buf[1] = (nodeVals[4] >> 8 ) & 0xFF;
+            buf[2] = (nodeVals[4] >> 16) & 0xFF;
+            buf[3] = (nodeVals[4] >> 24) & 0xFF;
+            DTI.receive(0x2016, buf);
 
             // print state machine info: state, target erpm
             // move to next row

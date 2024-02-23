@@ -4,7 +4,6 @@
 #include "fake_can.h"
 #include "SD.h"
 #include "sstream"
-#include <string>
 #include <cstdlib>
 
 using namespace std;
@@ -44,6 +43,7 @@ bool iCANflex::begin() {   //Coordinate the magic CAN pixies to dance together
     msg.flags.extended = 1;
     can_data.begin();
     can_data.setBaudRate(1000000);
+    timeRaw = "";
 
     return true;
 }
@@ -67,8 +67,9 @@ void iCANflex::canSimulation() {
     // APPS2:  ID=0xC8,   bytes 2-3
     // brakes: ID=0xC8,   bytes 4-7 (front brakes 4-5, back brakes 6-7)
     // erpm:   ID=0x2016, bytes 0-3
-    const stringstream iss;
 
+    stringstream simiss; // const so put into FLASH MEMORY
+    
     Serial.println("Initializing SD Card...");
     if(!SD.begin(BUILTIN_SDCARD)){
         Serial.println("CRITICAL FAULT: PLEASE INSERT SD CARD CONTAINING ECU FLASH TUNE");
@@ -76,7 +77,7 @@ void iCANflex::canSimulation() {
     else{
         Serial.println("SD INITIALIZATION SUCCESSFUL");
         File ecu_tune;
-        ecu_tune = SD.open("vdmsim.txt");
+        ecu_tune = SD.open("vdmsim.csv");
         if(ecu_tune){
             Serial.print("Reading ECU FLASH....");
             String tune;
@@ -87,7 +88,7 @@ void iCANflex::canSimulation() {
             ecu_tune.close();
             Serial.println("");
 
-            iss = new stringstream(tune.c_str()); // const so put into FLASH MEMORY
+            simiss << (tune.c_str()); // const so put into FLASH MEMORY
             // read in torque profiles, regen profiles, and traction profiles
             Serial.println("ECU FLASH COMPLETE. GR24 TUNE DOWNLOADED.");
 
@@ -105,34 +106,29 @@ void iCANflex::canSimulation() {
     int rLower[numNodes];
     int rHigher[numNodes];
     
-    iss >> wasteVals;
-    getline(iss, randomFlags);
-    iss >> wasteVals;
-    getline(iss, randomLower);
-    iss >> wasteVals;
-    getline(iss, randomHigher);
+    simiss >> wasteVals;
+    getline(simiss, randomFlags);
+    simiss >> wasteVals;
+    getline(simiss, randomLower);
+    simiss >> wasteVals;
+    getline(simiss, randomHigher);
 
     parseCsvLine(rFlags, randomFlags);
     parseCsvLine(rLower, randomLower);
     parseCsvLine(rHigher, randomHigher);
 
-    
-
-
-    if (iss) {// FIX: END AT END OF CSV
-        
-        //FIX: READ IN TIME
-        string timeRaw;
-        iss >> timeRaw;
-        int timeInput = stoi(timeRaw.substr(0, timeRaw.find(',')));
-        if (millis() > timeInput * 1000) {
+    if (!simiss.eof()) {// FIX: END AT END OF CSV
+        if (timeRaw == "") {
+            simiss >> timeRaw;
+        }
+        if (millis() > stoi(timeRaw.substr(0, timeRaw.find(','))) * 1000) {
             byte buf[8];
 
             // read csv values on current row into
             string currLine;
             int nodeVals[numNodes];
-             
-            getline(iss, currLine);
+            
+            getline(simiss, currLine);
             parseCsvLine(nodeVals, currLine);
             
             for (int i = 0; i < numNodes; i++) {
@@ -142,10 +138,10 @@ void iCANflex::canSimulation() {
             }
 
             // PEDALS: (byte 0-1: APPS1, byte 2-3: APPS2, byte 4-5: Front Brakes, byte 6-7: Rear Brakes)
-            buf[0] = (nodeVals[0]      ) & 0xFF;
-            buf[1] = (nodeVals[0]  >> 8) & 0xFF;
-            buf[2] = (nodeVals[1]      ) & 0xFF;
-            buf[3] = (nodeVals[1]  >> 8) & 0xFF;        
+            buf[0] = (nodeVals[0]     ) & 0xFF;
+            buf[1] = (nodeVals[0] >> 8) & 0xFF;
+            buf[2] = (nodeVals[1]     ) & 0xFF;
+            buf[3] = (nodeVals[1] >> 8) & 0xFF;        
             buf[4] = (nodeVals[2]     ) & 0xFF;
             buf[5] = (nodeVals[2] >> 8) & 0xFF;
             buf[6] = (nodeVals[3]     ) & 0xFF;
@@ -158,10 +154,10 @@ void iCANflex::canSimulation() {
             buf[2] = (nodeVals[4] >> 16) & 0xFF;
             buf[3] = (nodeVals[4] >> 24) & 0xFF;
             DTI.receive(0x2016, buf);
-
-            // print state machine info: state, target erpm
-            // move to next row
+            
+            timeRaw = "";
         }
+        
     }
 }
 

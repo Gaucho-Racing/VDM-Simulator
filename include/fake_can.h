@@ -1,5 +1,6 @@
 #include "Nodes.h"
 #include "FlexCAN_T4.h"
+#include <string>
 
 
 
@@ -68,6 +69,9 @@ class iCANflex{
     void ping(byte);
 
     void canSimulation();
+    
+
+    std::string timeRaw;
 
 };
 

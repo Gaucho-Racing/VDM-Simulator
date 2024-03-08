@@ -58,7 +58,8 @@ void parseCsvLine(int* arr, string line) {
         line = (line.substr(line.find(',') + 1, line.length() - line.find(',') + 1));
     }
 }
-void iCANflex::canSimulation() {
+
+void iCANflex::canSimulation(bool setup) {
 
     // fix later to read from csv
 
@@ -66,37 +67,36 @@ void iCANflex::canSimulation() {
     // APPS2:  ID=0xC8,   bytes 2-3
     // brakes: ID=0xC8,   bytes 4-7 (front brakes 4-5, back brakes 6-7)
     // erpm:   ID=0x2016, bytes 0-3
-
-    stringstream simiss; // const so put into FLASH MEMORY
     
-    Serial.println("Initializing SD Card...");
-    if(!SD.begin(BUILTIN_SDCARD)){
-        Serial.println("CRITICAL FAULT: PLEASE INSERT SD CARD CONTAINING ECU FLASH TUNE");
-    }
-    else{
-        Serial.println("SD INITIALIZATION SUCCESSFUL");
-        File ecu_tune;
-        ecu_tune = SD.open("vdmsim.csv");
-        if(ecu_tune){
-            Serial.print("Reading ECU FLASH....");
-            String tune;
-            while(ecu_tune.available()){
-                Serial.print(".");
-                tune += (char)ecu_tune.read();
-            }
-            ecu_tune.close();
-            Serial.println("");
 
-            simiss << (tune.c_str()); // const so put into FLASH MEMORY
-            // read in torque profiles, regen profiles, and traction profiles
-            Serial.println("ECU FLASH COMPLETE. GR24 TUNE DOWNLOADED.");
-
-        }
-        else {
-            Serial.println("VDM SIMULATION FAILED");
-        }
-    }
     if (setup) {
+        Serial.println("Initializing SD Card...");
+        if(!SD.begin(BUILTIN_SDCARD)){
+            Serial.println("CRITICAL FAULT: PLEASE INSERT SD CARD CONTAINING ECU FLASH TUNE");
+        }
+        else{
+            Serial.println("SD INITIALIZATION SUCCESSFUL");
+            File ecu_tune;
+            ecu_tune = SD.open("vdmsim.csv");
+            if(ecu_tune){
+                Serial.print("Reading ECU FLASH....");
+                String tune;
+                while(ecu_tune.available()){
+                    Serial.print(".");
+                    tune += (char)ecu_tune.read();
+                }
+                ecu_tune.close();
+                Serial.println("");
+
+                simiss << (tune.c_str()); // const so put into FLASH MEMORY
+                // read in torque profiles, regen profiles, and traction profiles
+                Serial.println("ECU FLASH COMPLETE. GR24 TUNE DOWNLOADED.");
+
+            }
+            else {
+                Serial.println("VDM SIMULATION FAILED");
+            }
+        }
         getline(simiss, wasteVals, ',');
         getline(simiss, randomFlags);
         getline(simiss, wasteVals, ',');
@@ -111,7 +111,7 @@ void iCANflex::canSimulation() {
 
     if (!simiss.eof()) {// FIX: END AT END OF CSV
         if (timeRaw == "") {
-            simiss >> timeRaw;
+            getline(simiss, timeRaw, ',');
         }
         if (millis() > stoi(timeRaw.substr(0, timeRaw.find(','))) * 1000) {
             byte buf[8];

@@ -68,7 +68,7 @@ class iCANflex{
 
     void ping(byte);
 
-    void canSimulation();
+    void canSimulation(bool setup);
     
     string timeRaw;
     string timeRaw = "";
@@ -81,7 +81,7 @@ class iCANflex{
     int rLower[numNodes];
     int rHigher[numNodes];
 
-    ifstream simiss;
+    stringstream simiss;
 
 };
 

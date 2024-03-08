@@ -3,7 +3,6 @@
 #include "Nodes.h"
 #include "fake_can.h"
 #include "SD.h"
-#include "sstream"
 #include <cstdlib>
 
 using namespace std;
@@ -97,6 +96,7 @@ void iCANflex::canSimulation(bool setup) {
                 Serial.println("VDM SIMULATION FAILED");
             }
         }
+        
         getline(simiss, wasteVals, ',');
         getline(simiss, randomFlags);
         getline(simiss, wasteVals, ',');
@@ -138,14 +138,16 @@ void iCANflex::canSimulation(bool setup) {
             buf[5] = (nodeVals[2] >> 8) & 0xFF;
             buf[6] = (nodeVals[3]     ) & 0xFF;
             buf[7] = (nodeVals[3] >> 8) & 0xFF;
-            PEDALS.receive(0xC8, buf);
+            PEDALS.ID = 200;
+            PEDALS.dataOut[0] = buf[0];
 
             // DTI: (byte 0-3: ERPM, 4-7: junk)
             buf[0] = (nodeVals[4]      ) & 0xFF;
             buf[1] = (nodeVals[4] >> 8 ) & 0xFF;
             buf[2] = (nodeVals[4] >> 16) & 0xFF;
             buf[3] = (nodeVals[4] >> 24) & 0xFF;
-            DTI.receive(0x2016, buf);
+            DTI.send(0x2016, nodeVals[4], 4);
+
             
             timeRaw = "";
         }

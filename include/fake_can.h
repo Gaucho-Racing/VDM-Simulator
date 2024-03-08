@@ -2,6 +2,8 @@
 #include "FlexCAN_T4.h"
 #include <string>
 
+#include "sstream"
+
 
 
 #define USE_CAN_PRIMARY
@@ -70,18 +72,17 @@ class iCANflex{
 
     void canSimulation(bool setup);
     
-    string timeRaw;
-    string timeRaw = "";
-    string randomFlags = "";
-    string randomLower = "";
-    string randomHigher = "";
-    string wasteVals = "";
+    std::string timeRaw;
+    std::string randomFlags;
+    std::string randomLower ;
+    std::string randomHigher;
+    std::string wasteVals ;
 
     int rFlags[numNodes];
     int rLower[numNodes];
     int rHigher[numNodes];
 
-    stringstream simiss;
+    std::stringstream simiss;
 
 };
 

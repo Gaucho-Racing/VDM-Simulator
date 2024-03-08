@@ -8,7 +8,6 @@
 
 using namespace std;
 
-#define numNodes 5
 
 unsigned long lastRecieveTime=millis();
 
@@ -48,17 +47,17 @@ bool iCANflex::begin() {   //Coordinate the magic CAN pixies to dance together
     return true;
 }
 
-void parseCsvLine(int arr[], string line) {
+void parseCsvLine(int* arr, string line) {
     for (int i = 0; i < numNodes; i++) {
         if (i < numNodes - 1) {
             arr[i] = stoi(line.substr(0, line.find(',')));
         } else {
             arr[i] = stoi(line);
         }
-        arr[i] = stoi(line.substr(line.find(',') + 1, line.length()));
+        
+        line = (line.substr(line.find(',') + 1, line.length() - line.find(',') + 1));
     }
 }
-
 void iCANflex::canSimulation() {
 
     // fix later to read from csv
@@ -97,25 +96,18 @@ void iCANflex::canSimulation() {
             Serial.println("VDM SIMULATION FAILED");
         }
     }
-    string randomFlags;
-    string randomLower;
-    string randomHigher;
-    string wasteVals;
+    if (setup) {
+        getline(simiss, wasteVals, ',');
+        getline(simiss, randomFlags);
+        getline(simiss, wasteVals, ',');
+        getline(simiss, randomLower);
+        getline(simiss, wasteVals, ',');
+        getline(simiss, randomHigher);
 
-    int rFlags[numNodes];
-    int rLower[numNodes];
-    int rHigher[numNodes];
-    
-    simiss >> wasteVals;
-    getline(simiss, randomFlags);
-    simiss >> wasteVals;
-    getline(simiss, randomLower);
-    simiss >> wasteVals;
-    getline(simiss, randomHigher);
-
-    parseCsvLine(rFlags, randomFlags);
-    parseCsvLine(rLower, randomLower);
-    parseCsvLine(rHigher, randomHigher);
+        parseCsvLine(rFlags, randomFlags);
+        parseCsvLine(rLower, randomLower);
+        parseCsvLine(rHigher, randomHigher);
+    }
 
     if (!simiss.eof()) {// FIX: END AT END OF CSV
         if (timeRaw == "") {

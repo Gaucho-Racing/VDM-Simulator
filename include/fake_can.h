@@ -25,7 +25,7 @@
     #error "Please define either USE_CAN_PRIMARY or USE_CAN_DATA"
 #endif
 
-
+#define numNodes 5
 
 class iCANflex{
     public:
@@ -70,8 +70,18 @@ class iCANflex{
 
     void canSimulation();
     
+    string timeRaw;
+    string timeRaw = "";
+    string randomFlags = "";
+    string randomLower = "";
+    string randomHigher = "";
+    string wasteVals = "";
 
-    std::string timeRaw;
+    int rFlags[numNodes];
+    int rLower[numNodes];
+    int rHigher[numNodes];
+
+    ifstream simiss;
 
 };
 

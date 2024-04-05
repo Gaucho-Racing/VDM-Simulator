@@ -66,6 +66,9 @@ void loop(){
     // SystemsCheck::system_limits(*Car, *active_limits);
     // SystemsCheck::system_warnings(*Car, *active_warnings);
 
+    // reads bspd, ams, nd imd pins as analog   
+    SystemsCheck::hardware_system_critical(*Car);
+    Car->canSimulation(false);
 
     // SEND_SYS_CHECK_FRAMES();
     
@@ -143,6 +146,7 @@ void setup() {
     active_faults = new unordered_set<bool (*)(const iCANflex&)>(); 
     active_warnings = new unordered_set<bool (*)(const iCANflex&)>();
     active_limits = new unordered_set<bool (*)(const iCANflex&)>();
+    Car->canSimulation(true);
 
     active_faults->clear();
     active_warnings->clear();

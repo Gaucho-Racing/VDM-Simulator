@@ -14,7 +14,7 @@ State sendToError(bool (*erFunc)(const iCANflex& Car)) {
 void loop(){
     // reads bspd, ams, nd imd pins as analog   
     SystemsCheck::hardware_system_critical(*Car);
-
+    Car->canSimulation(false);
 
     //check AMS fault
     
@@ -76,6 +76,7 @@ void setup() {
     Serial.println("Connected to Serial Port 9600");
 
     Car->begin();
+    Car->canSimulation(true);
 
      // set state  
     state = ECU_FLASH; 

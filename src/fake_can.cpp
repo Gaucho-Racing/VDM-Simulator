@@ -68,7 +68,7 @@ void iCANflex::canSimulation(bool setup) {
     // erpm:   ID=0x2016, bytes 0-3
     
 
-    if (setup) {
+    if (setup) {/*
         Serial.println("Initializing SD Card...");
         if(!SD.begin(BUILTIN_SDCARD)){
             Serial.println("CRITICAL FAULT: PLEASE INSERT SD CARD CONTAINING ECU FLASH TUNE");
@@ -95,8 +95,8 @@ void iCANflex::canSimulation(bool setup) {
             else {
                 Serial.println("VDM SIMULATION FAILED");
             }
-        }
-        
+        }*/
+        simiss << "0,0,0,0,0,0\n0,200,100,0,0,0\n1,300,200,1,1,1\n0,50,50,0,0,1000\n20,25,25,0,0,1500\n30,50,50,0,0,2000\n40,0,0,50,50,1000\n50,0,0,70,70,2000";
         getline(simiss, wasteVals, ',');
         getline(simiss, randomFlags);
         getline(simiss, wasteVals, ',');
@@ -140,14 +140,28 @@ void iCANflex::canSimulation(bool setup) {
             buf[7] = (nodeVals[3] >> 8) & 0xFF;
             PEDALS.ID = 200;
             PEDALS.dataOut[0] = buf[0];
+            PEDALS.dataOut[1] = buf[1];
+            PEDALS.dataOut[2] = buf[2];
+            PEDALS.dataOut[3] = buf[3];
+            PEDALS.dataOut[4] = buf[4];
+            PEDALS.dataOut[5] = buf[5];
+            PEDALS.dataOut[6] = buf[6];
+            PEDALS.dataOut[7] = buf[7];
+            PEDALS.send();
 
             // DTI: (byte 0-3: ERPM, 4-7: junk)
             buf[0] = (nodeVals[4]      ) & 0xFF;
             buf[1] = (nodeVals[4] >> 8 ) & 0xFF;
             buf[2] = (nodeVals[4] >> 16) & 0xFF;
             buf[3] = (nodeVals[4] >> 24) & 0xFF;
-            DTI.send(0x2016, nodeVals[4], 4);
+            DTI.ID = 8214;
+            DTI.send(0, nodeVals[4], 8);
 
+            Serial.println(nodeVals[0]);
+            Serial.println(nodeVals[1]);
+            Serial.println(nodeVals[2]);
+            Serial.println(nodeVals[3]);
+            Serial.println(nodeVals[4]);
             
             timeRaw = "";
         }

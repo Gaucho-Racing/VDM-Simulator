@@ -74,9 +74,9 @@ class iCANflex{
     
     std::string timeRaw;
     std::string randomFlags;
-    std::string randomLower ;
+    std::string randomLower;
     std::string randomHigher;
-    std::string wasteVals ;
+    std::string wasteVals;
 
     int rFlags[numNodes];
     int rLower[numNodes];

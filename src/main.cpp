@@ -67,7 +67,6 @@ void loop(){
     // SystemsCheck::system_warnings(*Car, *active_warnings);
 
     // reads bspd, ams, nd imd pins as analog   
-    SystemsCheck::hardware_system_critical(*Car);
     Car->canSimulation(false);
 
     // SEND_SYS_CHECK_FRAMES();

@@ -71,6 +71,7 @@ class iCANflex{
     void ping(byte);
 
     void canSimulation(bool setup);
+    void printCan();
     
     std::string timeRaw;
     std::string randomFlags;

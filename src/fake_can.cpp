@@ -130,6 +130,8 @@ void iCANflex::canSimulation(bool setup) {
             }
 
             // PEDALS: (byte 0-1: APPS1, byte 2-3: APPS2, byte 4-5: Front Brakes, byte 6-7: Rear Brakes)
+            
+            
             buf[0] = (nodeVals[0]     ) & 0xFF;
             buf[1] = (nodeVals[0] >> 8) & 0xFF;
             buf[2] = (nodeVals[1]     ) & 0xFF;
@@ -138,6 +140,7 @@ void iCANflex::canSimulation(bool setup) {
             buf[5] = (nodeVals[2] >> 8) & 0xFF;
             buf[6] = (nodeVals[3]     ) & 0xFF;
             buf[7] = (nodeVals[3] >> 8) & 0xFF;
+            /*
             PEDALS.ID = 200;
             PEDALS.dataOut[0] = buf[0];
             PEDALS.dataOut[1] = buf[1];
@@ -147,27 +150,61 @@ void iCANflex::canSimulation(bool setup) {
             PEDALS.dataOut[5] = buf[5];
             PEDALS.dataOut[6] = buf[6];
             PEDALS.dataOut[7] = buf[7];
-            PEDALS.send();
+            PEDALS.send();*/
+            for(int i = 0; i < 8; i++) msg.buf[i] = buf[i]; 
 
-            // DTI: (byte 0-3: ERPM, 4-7: junk)
-            buf[0] = (nodeVals[4]      ) & 0xFF;
-            buf[1] = (nodeVals[4] >> 8 ) & 0xFF;
-            buf[2] = (nodeVals[4] >> 16) & 0xFF;
-            buf[3] = (nodeVals[4] >> 24) & 0xFF;
-            DTI.ID = 8214;
-            DTI.send(0, nodeVals[4], 8);
+            msg.id = 200;
+            msg.flags.extended=true;
+            msg.len = 8;
 
+            Serial.println("PEDALS VALS:");
             Serial.println(nodeVals[0]);
             Serial.println(nodeVals[1]);
             Serial.println(nodeVals[2]);
             Serial.println(nodeVals[3]);
+            can_primary.write(msg) == 1 ? Serial.println("PEDALS SUCCESSFUL") : Serial.println("PEDALS FAILED");
+            
+            
+
+            // DTI: (byte 0-3: ERPM, 4-7: junk)
+            
+            buf[0] = (nodeVals[4]      ) & 0xFF;
+            buf[1] = (nodeVals[4] >> 8 ) & 0xFF;
+            buf[2] = (nodeVals[4] >> 16) & 0xFF;
+            buf[3] = (nodeVals[4] >> 24) & 0xFF;
+            /*
+            DTI.ID = 8214;
+            DTI.send(0, nodeVals[4], 8);*/
+
+            for(int i = 0; i < 4; i++) msg.buf[i] = buf[i]; 
+
+            msg.id = 8214;
+            msg.flags.extended=true;
+            msg.len = 4;
+
+            Serial.println("DTI VALS:");
             Serial.println(nodeVals[4]);
+            can_primary.write(msg) == 1 ? Serial.println("DTI SUCCESSFUL") : Serial.println("DTI FAILED");
             
             timeRaw = "";
         }
         
     }
 }
+
+void iCANflex::printCan() {
+    CAN_message_t readMsg;
+    can_primary.read(readMsg);
+
+    for (int i = 0; i < readMsg.len; i++) {
+        Serial.print(readMsg.buf[i]);
+        Serial.print("|");
+    }
+
+    Serial.println();
+    
+}
+
 
 bool iCANflex::readData(){    //Read data from the inverter or the BMS
     // lastRecieveTime = millis();

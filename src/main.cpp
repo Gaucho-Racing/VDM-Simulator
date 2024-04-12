@@ -145,7 +145,6 @@ void setup() {
     active_faults = new unordered_set<bool (*)(const iCANflex&)>(); 
     active_warnings = new unordered_set<bool (*)(const iCANflex&)>();
     active_limits = new unordered_set<bool (*)(const iCANflex&)>();
-    Car->canSimulation(true);
 
     active_faults->clear();
     active_warnings->clear();

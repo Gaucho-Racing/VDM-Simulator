@@ -195,7 +195,9 @@ void iCANflex::canSimulation(bool setup) {
 void iCANflex::printCan() {
     CAN_message_t readMsg;
     can_primary.read(readMsg);
-
+    Serial.print("MSG ID: ");
+    Serial.println(readMsg.id);
+    
     for (int i = 0; i < readMsg.len; i++) {
         Serial.print(readMsg.buf[i]);
         Serial.print("|");
